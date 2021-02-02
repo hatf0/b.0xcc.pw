@@ -1,0 +1,14 @@
+/* some inspiration from DHowett's blog here */
+.project-tag {
+  font-size: 0.75em;
+  margin: 0 2px 0 2px;
+  padding: 0 2px 0 2px;
+  border-radius: 2px;
+  color: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.project-summary {
+  opacity: 50%;
+  margin-bottom: 1em;
+}

@@ -1,8 +1,8 @@
 +++
 title = "BlocklandJS"
 tags = [ "c++", "blockland", "javascript" ]
-summary = ""
-date = 2016-03-06T20:00:00-07:00
+summary = "Blockland + a fast JavaScript engine. What could go wrong?"
+date = 2016-03-06T00:00:00-05:00
 draft = false
 
 [[repo]]

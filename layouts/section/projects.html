@@ -1,0 +1,20 @@
+{{ define "main" }}
+{{- .Content -}}
+<ul>
+{{ range .Pages }}
+<li>
+    <a href="{{.Permalink}}">{{.Title}}</a>
+	{{- if .Params.tags -}}
+		<div class="project-tag-list">
+		{{- range .Params.tags -}}
+            <span class="project-tag">{{.}}</span>
+		{{- end -}}
+		</div>
+	{{- end -}}
+    <div class="project-summary">
+        {{.Summary | markdownify}}
+    </div>
+</li>
+{{ end }}
+</ul>
+{{ end }}
