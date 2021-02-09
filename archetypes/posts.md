@@ -1,7 +1,7 @@
----
-title: "{{ replace .Name "-" " " | title }}"
-date: {{ .Date }}
-draft: true
-description: ""
-author: "hatf0"
----
++++
+title = "{{ replace .Name "-" " " | title }}"
+date = {{ .Date }}
+draft = true
+description = ""
+author = "hatf0"
++++
