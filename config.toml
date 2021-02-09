@@ -28,7 +28,8 @@ paginate = 5
 
   # set post to show the last updated
   # If you use git, you can set `enableGitInfo` to `true` and then post will automatically get the last updated
-  showLastUpdated = false
+  # enableGitInfo = true
+  # showLastUpdated = true
   # Provide a string as a prefix for the last update date. By default, it looks like this: 2020-xx-xx [Updated: 2020-xx-xx] :: Author
   # updatedDatePrefix = "Updated"
 
@@ -46,19 +47,19 @@ paginate = 5
 [languages]
   [languages.en]
     languageName = "English"
-    title = "0xcc.pw / hatf0"
-    subtitle = "unknown error"
-    owner = ""
+    title = "b.0xcc.pw"
+    subtitle = "Hell, but warmer"
+    owner = "Harrison Ford"
     keywords = ""
     copyright = "© 2021 Harrison Ford"
     menuMore = "Show more"
     readMore = "Read more"
     readOtherPosts = "Read other posts"
-    missingContentMessage = "Page not found..."
+    missingContentMessage = "Page not found. Try again?"
     missingBackButtonLabel = "Back to home page"
 
     [languages.en.params.logo]
-      logoText = "0xcc.pw"
+      logoText = "b.0xcc.pw"
       logoHomeLink = "/"
 
     [languages.en.menu]
@@ -70,4 +71,8 @@ paginate = 5
         identifier = "Posts"
         name = "Posts"
         url = "/posts"
+      [[languages.en.menu.main]]
+        identifier = "Terminal"
+        name = "Terminal"
+        url = "https://0xcc.pw"
  

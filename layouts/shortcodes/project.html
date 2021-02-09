@@ -1,0 +1,13 @@
+{{ range $.Page.Params.project }}
+    <p>Status:
+    {{ if eq .status "eol" }}
+        <span style="color: #ffabab">unsupported</span>
+    {{ else if eq .status "supported" }}
+        <span style="color: #bffcc6">supported</span>
+    {{ else }}
+        <span style="color: var(--accent)">{{ .status }}</span>
+    {{ end }}
+    </p>
+{{ end }}
+
+
