@@ -2,7 +2,7 @@
 title = "Virtual Virtual Classes"
 date = 2021-02-09T13:09:37-05:00
 draft = false
-description = "or how I learned how to abuse RtDynamicCast"
+description = "or how I learned how to abuse VirtualProtect/memcpy"
 author = "hatf0"
 
 [[repo]]
@@ -41,8 +41,8 @@ They are then implemented with the use of the `IMPLEMENT_CONOBJECT` macro, which
 
 Example usage:
 ```cpp
-// CustomClassObject.h
-class CustomClassObject : public SimObject {
+// TestClass.h
+class TestClass : public SimObject {
     typedef SimObject Parent;
 public:
     // foo
@@ -50,20 +50,20 @@ public:
     static void consoleInit();
     static void initPersistFields();
 
-    DECLARE_CONOBJECT(CustomClassObject);
+    DECLARE_CONOBJECT(TestClass);
 }
 
-// CustomClassObject.cpp
-#include "CustomClassObject.h"
+// TestClass.cpp
+#include "TestClass.h"
 
 // method implementations here
 
-IMPLEMENT_CONOBJECT(CustomClassObject);
+IMPLEMENT_CONOBJECT(TestClass);
 ```
 One would assume it's just as easy to add a new file, define our class, and be on our way. This is correct.. if you have the source code. 
 Unfortunately, the most source code that we have is from the IDA Decompiler, and the engine source code. We're working from a DLL, with several critical methods we need inlined.. 
 
-How do we go about this, then?
+How, exactly, do we go about this?
 
 ## A Primer On DLLs
 A DLL, or a Dynamic Link Library, is the Windows-equivalent of a `.so` object on Linux. We can either:
@@ -101,9 +101,15 @@ Notice how `registerClassRep` never sets up the class representation? `registerC
 
 That's handled in `AbstractClassRep::initialize`... but `AbstractClassRep::initialize` is called at the *very beginning*, before everything else. 
 
-To solve this? We just add our DLL to the PE stub, and don't inject it manually. Now we're running before `AbstractClassRep::initialize` is called.
+To solve this? We just add our DLL to the PE stub, and don't inject it manually. 
 
+## PE Header Modification
+This is the simplest part. To modify the PE header, we use a tool such as CFF Explorer, and simply patch the imports to add our DLL:
+{{< figure src="pe_modify.jpg" >}}
+
+Now we're running before `AbstractClassRep::initialize` is called.
 Unnnnfortunately, we're now crashing. It turns out that modifying an engine variable before the engine has even initialized isn't such a good idea. Now what? 
+
 
 ## polyhook & Chill
 
@@ -125,18 +131,123 @@ How do we do this? The library inserts a "trampoline", and effectively detours t
 ```
 And while, yes, we could write our own trampoline layer, I find it easier to just use a library such as PolyHook / Detours. 
 
-## Abusing RTDynamicCast to win
-Wonderful! We've registered our AbstractClassRep, we've had `consoleInit` and `initPersistFields` called, and we're now ready to create our object.
-
-
 ## Don't Copy Those Vtables!
+Wonderful! We've registered our AbstractClassRep, we've had `consoleInit` and `initPersistFields` called, and we're now ready to create our object.
+We'll just...
+{{< figure src="wtf.jpeg" caption="!?!?!?!?!" >}}
 
+...
 
-{{< figure src="https://f.0xcc.pw/palo-alto/1kVFKgfTSgsc.png" caption="Success! (spoilers!)" >}}
+The funny thing is... we're missing core functionality, and we're missing a *ton* of functions that the game depends on. My solution? Stubs.
 
-## We won, but how do we add member methods?
+{{< figure src="http://f.0xcc.pw/palo-alto/YdLbWPYtf0jC.png" caption="Stubs stubs stubs!" >}}
 
-## How about adding fields?
+Great. We've populated the vtable, so we shouldn't crash... aaaaand....
+{{< figure src="wtf.jpeg" caption="AGAIN??????" >}}
+
+It turns out that you have to "populate" these stubs in order to restore functionality. Thankfully for us, finding the SimObject vtable is simple - IDA even handily labels it for you!
+
+Now, *sigh*, we have to overwrite the vtable of our class to fix the vtable pointers. Thankfully, vtables are just copied around, so once we patch it once, we'll never need to patch it again.
+```cpp
+TestClass::TestClass()
+{
+	fixVTable();
+}
+
+static int simObjectVFTSize = (17 * sizeof(void*));
+static bool vftFixed = false;
+void TestClass::fixVTable()
+{
+	if (vftFixed) return;
+	Printf("Fixing vTable");
+
+	// vtables are always located in .RDATA, so we need to patch them to enable R/W
+	void* ourVtable = *(void**)this;
+	DWORD oldProtection;
+	VirtualProtect(ourVtable, simObjectVFTSize, PAGE_READWRITE, &oldProtection);
+	// Ignore getClassRep() and our dtor, only copy the rest
+	// If you want to override any other functions, you *need* to do it here and restore them
+	memcpy((void*)((DWORD)ourVtable + 0x8), (void*)((DWORD)pSimObjectVTable + 0x8), 15 * sizeof(void*));
+	VirtualProtect(ourVtable, simObjectVFTSize, oldProtection, &oldProtection);
+	vftFixed = true;
+}
+```
+And with these changes...
+{{< figure src="dump_works.jpg" caption="Success!" >}}
+
+Great! But how do we make this class usable and add methods / variables?
+## Adding Methods
+Adding methods is the simplest - you just have to call your `RegisterMethod` function from `TestClass::consoleInit()`. By now, `AbstractClassRep::initialize` has created you a custom namespace -- we use this to register functions.
+```cpp
+ConsoleMethod(void, testMethod)
+{
+	TestClass* o = (TestClass*)obj;
+	Printf("Member method called");
+	Printf("%d", o->testInt);
+	/* Walk the class list and print it out as a proof of concept */
+	for (AbstractClassRep* walk = AbstractClassRep::getClassList(); walk; walk = walk->nextClass)
+	{
+		Printf("%s", walk->mNamespace->mName);
+		Printf("%s", walk->mClassName);
+	}
+}
+
+void TestClass::consoleInit()
+{
+	Namespace* ns = TestClass::getStaticClassRep()->mNamespace;
+	RegisterInternalMethod(ns, testMethod, "() - Test method", 2, 2);
+}
+```
+Simple enough -- no mess, no drama.
+{{< figure src="https://f.0xcc.pw/palo-alto/1kVFKgfTSgsc.png" caption="Success!" >}}
+
+But now we want to add custom fields.
+
+## Calling Convention Hell (Adding Fields)
+Unfortunately for us, the compiler has decided to convert *every* single field function into a `__fastcall` -- some even beyond `__fastcall` and straight up breaking specification.
+
+As such.. to call the main function to add a field (`ConsoleObject::addField`), you have to call it in this manner:
+```cpp
+void __fastcall ConsoleObject::addField(const char* in_pFieldname,
+    const U32     in_fieldType,
+    const size_t in_fieldOffset,
+    const U32     in_elementCount,
+    EnumTable* in_table,
+    const char* in_pFieldDocs)
+{
+	/*
+	 * This function doesn't fix the stack (naked call?)
+	 * We need to fix ESP so we don't mess anything up   
+	 */
+	__asm {
+        push in_pFieldDocs;
+        push in_table;
+        push in_elementCount;
+        push in_fieldOffset;
+        mov edx, in_fieldType;
+        mov ecx, in_pFieldname;
+        call ConsoleObjectAddField;
+        add esp, 10h;
+	}
+}
+```
+MSVC, wtf?
 
 ## Fin
+After that fix, we just simply declare our member variables in `TestClass::initPersistFields()`
+```cpp
+void TestClass::initPersistFields()
+{
+	addGroup("Test");
+	addField("test", TypeInt, Offset(testInt, TestClass), 1, 0, "Test");
+	endGroup("Test");
+}
+```
+aaand....
 
+{{< figure src="both_work.jpg" caption="Success!" >}}
+
+Sweet. We have everything for working classes.
+
+This has been a really fun project (and I have to thank Val for help/guidance), and it's really
+broadened my view on *just* how hacky C++ classes are. `RTDynamicCast` be damned.
