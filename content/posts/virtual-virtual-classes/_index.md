@@ -140,7 +140,7 @@ We'll just...
 
 The funny thing is... we're missing core functionality, and we're missing a *ton* of functions that the game depends on. My solution? Stubs.
 
-{{< figure src="http://f.0xcc.pw/palo-alto/YdLbWPYtf0jC.png" caption="Stubs stubs stubs!" >}}
+{{< figure src="https://f.0xcc.pw/palo-alto/YdLbWPYtf0jC.png" caption="Stubs stubs stubs!" >}}
 
 Great. We've populated the vtable, so we shouldn't crash... aaaaand....
 {{< figure src="wtf.jpeg" caption="AGAIN??????" >}}
