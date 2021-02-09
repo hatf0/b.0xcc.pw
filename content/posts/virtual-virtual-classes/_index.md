@@ -75,20 +75,17 @@ or
 
 This allows us to inject code, modify execution flow, etc. Once we have a DLL injected, we have virtually infinite control over the program. 
 
-## We're injected, now what?
-We've built our first DLL, injected it in, and had it print out "Hello World" to the game's console. Great.
-
-But how do we hook the game's functionality?
-
 ## Beating the AbstractClassRep engine at instantiation
-Great! We're in, and we've successfully hooked our first function -- and we've successfully called
+Great! Using that primer, we've built our DLL and injected it in. Within our `init`, we call
 ```cpp
 AbstractClassRep::registerClassRep(CustomClassObject::getStaticClassRep());
 ```
+And all is good in the world! We have class support!
 
-But wait... `consoleInit()` is never getting called, and neither is `initPersistFields()`. What's going on? 
+But wait, something isn't right... 
+`consoleInit()` is never getting called -- neither is `initPersistFields()`. What's going on? 
 
-If we look in `console/consoleObject.cc`, we can get a clue onto what's going on.
+If we look in `console/consoleObject.cc` of the engine's source code, we can get a clue.
 ```cpp
 void AbstractClassRep::registerClassRep(AbstractClassRep* in_pRep)
 {
@@ -106,7 +103,7 @@ That's handled in `AbstractClassRep::initialize`... but `AbstractClassRep::initi
 
 To solve this? We just add our DLL to the PE stub, and don't inject it manually. Now we're running before `AbstractClassRep::initialize` is called.
 
-But wait -- we're crashing. It turns out that modifying an engine variable before the engine has even initialized isn't such a good idea. Now what? 
+Unnnnfortunately, we're now crashing. It turns out that modifying an engine variable before the engine has even initialized isn't such a good idea. Now what? 
 
 ## polyhook & Chill
 
@@ -135,7 +132,7 @@ Wonderful! We've registered our AbstractClassRep, we've had `consoleInit` and `i
 ## Don't Copy Those Vtables!
 
 
-{{< figure src="http://f.0xcc.pw/palo-alto/1kVFKgfTSgsc.png" caption="Success! (spoilers!)" >}}
+{{< figure src="https://f.0xcc.pw/palo-alto/1kVFKgfTSgsc.png" caption="Success! (spoilers!)" >}}
 
 ## We won, but how do we add member methods?
 
