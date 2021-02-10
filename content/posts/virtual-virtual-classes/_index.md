@@ -117,7 +117,7 @@ Unnnnfortunately, we're now crashing. It turns out that modifying an engine vari
 
 [`polyhook`](https://github.com/stevemk14ebr/PolyHook_2_0) is a "x86/x64 C++ Hooking Library" which easily allows us to intercept function calls. 
 
-We use this library to hook `AbstractClassRep::initalize` so we can register our class rep as early as possible, but not *too early*. 
+We use this library to hook `AbstractClassRep::initialize` so we can register our class rep as early as possible, but not *too early*. 
 
 How do we do this? The library inserts a "trampoline", and effectively detours the function call, giving us control before any other code can run.
 ```cpp
