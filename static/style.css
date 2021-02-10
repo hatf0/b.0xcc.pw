@@ -12,3 +12,41 @@
   opacity: 50%;
   margin-bottom: 1em;
 }
+
+/* Fix the player container to take up 100% width and to calculate its height based on its children. */
+[data-player] {
+    position: relative;
+    width: 100%;
+    height: auto;
+    margin: 0;    
+}
+
+/* Fix the video container to take up 100% width and to calculate its height based on its children. */
+[data-player] .container[data-container] {
+    min-height: 0px;
+    width: 100%;
+    height: auto;
+    position: relative;
+}
+
+.player-poster[data-poster] {
+    width: 100%;
+    height: auto;
+    position: relative;
+}
+
+/* Fix the media-control element to take up the entire size of the player. */
+[data-player] .media-control[data-media-control] {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+}
+
+/* Fix the video element to take up 100% width and to calculate its height based on its natural aspect ratio. */
+[data-player] video {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: auto;
+}

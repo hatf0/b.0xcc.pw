@@ -1,0 +1,28 @@
+{{ .Scratch.Add "video-count" 1 }}
+{{ if .Get "src" }}
+{{ if .Get "caption" }}
+<figure class="{{ with .Get "position"}}{{ . }}{{ else -}} left {{- end }}" >
+{{ end }}
+  <div id="player-wrapper-{{ .Scratch.Get "video-count" }}"></div>
+{{ if .Get "caption" }}
+  <figcaption class="{{ with .Get "captionPosition"}}{{ . }}{{ else -}} center {{- end }}" {{ with .Get "captionStyle" }} style="{{ . | safeCSS }}" {{ end }}>{{ .Get "caption" }}</figcaption>
+</figure>
+{{ end }}
+ 
+<script>
+    var player = new Clappr.Player({
+        source: {{ .Get "src" }},
+        mute: {{ with .Get "mute" }}{{ . }}{{ else -}} "false" {{- end }},
+        parentId: "#player-wrapper-{{ .Scratch.Get "video-count" }}",
+        {{ if .Get "width" }}
+            width: {{ .Get "width" }},
+        {{ end }}
+
+        {{ if .Get "height" }}
+            height: {{ .Get "height" }},
+        {{ else }}
+            height: "auto",
+        {{ end }}
+    });
+</script>
+{{ end }}

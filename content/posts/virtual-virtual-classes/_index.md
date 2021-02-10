@@ -60,10 +60,12 @@ public:
 
 IMPLEMENT_CONOBJECT(TestClass);
 ```
-One would assume it's just as easy to add a new file, define our class, and be on our way. This is correct.. if you have the source code. 
-Unfortunately, the most source code that we have is from the IDA Decompiler, and the engine source code. We're working from a DLL, with several critical methods we need inlined.. 
+One would assume it's just as easy to add a new file, define our class, and be on our way. This is correct, but only if you have the source code. 
+Unfortunately, the most source code that we have is from the IDA Decompiler, and the engine source code. We're working from a DLL, with several critical methods we need inlined. 
 
 How, exactly, do we go about this?
+
+First, we need to talk about DLLs.
 
 ## A Primer On DLLs
 A DLL, or a Dynamic Link Library, is the Windows-equivalent of a `.so` object on Linux. We can either:
@@ -78,7 +80,7 @@ This allows us to inject code, modify execution flow, etc. Once we have a DLL in
 ## Beating the AbstractClassRep engine at instantiation
 Great! Using that primer, we've built our DLL and injected it in. Within our `init`, we call
 ```cpp
-AbstractClassRep::registerClassRep(CustomClassObject::getStaticClassRep());
+AbstractClassRep::registerClassRep(TestClass::getStaticClassRep());
 ```
 And all is good in the world! We have class support!
 
@@ -206,7 +208,7 @@ But now we want to add custom fields.
 ## Calling Convention Hell (Adding Fields)
 Unfortunately for us, the compiler has decided to convert *every* single field function into a `__fastcall` -- some even beyond `__fastcall` and straight up breaking specification.
 
-As such.. to call the main function to add a field (`ConsoleObject::addField`), you have to call it in this manner:
+As such... to call the main function to add a field (`ConsoleObject::addField`), you have to call it in this manner:
 ```cpp
 void __fastcall ConsoleObject::addField(const char* in_pFieldname,
     const U32     in_fieldType,
@@ -243,11 +245,16 @@ void TestClass::initPersistFields()
 	endGroup("Test");
 }
 ```
-aaand....
+aaand...
 
 {{< figure src="both_work.jpg" caption="Success!" >}}
 
-Sweet. We have everything for working classes.
+Sweet. Everything works.
 
-This has been a really fun project (and I have to thank Val for help/guidance), and it's really
-broadened my view on *just* how hacky C++ classes are. `RTDynamicCast` be damned.
+----------------
+
+This has been a really fun project and a good waste of a few days, and I can't say I didn't enjoy it.
+{{< video src="https://f.0xcc.pw/palo-alto/B9j1l4rSQuzS.mp4" width="100%" height="auto" caption="My IDA names window after finishing this project">}}
+All credits to Val for blazing the way and giving me the idea. 
+
+
