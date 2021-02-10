@@ -107,7 +107,7 @@ To solve this? We just add our DLL to the PE stub, and don't inject it manually.
 
 ## PE Header Modification
 This is the simplest part. To modify the PE header, we use a tool such as CFF Explorer, and simply patch the imports to add our DLL:
-{{< figure src="pe_modify.jpg" >}}
+{{< figure src="/img/pe_modify.jpg" >}}
 
 Now we're running before `AbstractClassRep::initialize` is called.
 Unnnnfortunately, we're now crashing. It turns out that modifying an engine variable before the engine has even initialized isn't such a good idea. Now what? 
@@ -136,7 +136,7 @@ And while, yes, we could write our own trampoline layer, I find it easier to jus
 ## Don't Copy Those Vtables!
 Wonderful! We've registered our AbstractClassRep, we've had `consoleInit` and `initPersistFields` called, and we're now ready to create our object.
 We'll just...
-{{< figure src="wtf.jpeg" caption="!?!?!?!?!" >}}
+{{< figure src="/img/wtf.jpeg" caption="!?!?!?!?!" >}}
 
 ...
 
@@ -145,7 +145,7 @@ The funny thing is... we're missing core functionality, and we're missing a *ton
 {{< figure src="https://f.0xcc.pw/palo-alto/YdLbWPYtf0jC.png" caption="Stubs stubs stubs!" >}}
 
 Great. We've populated the vtable, so we shouldn't crash... aaaaand....
-{{< figure src="wtf.jpeg" caption="AGAIN??????" >}}
+{{< figure src="/img/wtf.jpeg" caption="AGAIN??????" >}}
 
 It turns out that you have to "populate" these stubs in order to restore functionality. Thankfully for us, finding the SimObject vtable is simple - IDA even handily labels it for you!
 
@@ -175,7 +175,7 @@ void TestClass::fixVTable()
 }
 ```
 And with these changes...
-{{< figure src="dump_works.jpg" caption="Success!" >}}
+{{< figure src="/img/dump_works.jpg" caption="Success!" >}}
 
 Great! But how do we make this class usable and add methods / variables?
 ## Adding Methods
@@ -247,7 +247,7 @@ void TestClass::initPersistFields()
 ```
 aaand...
 
-{{< figure src="both_work.jpg" caption="Success!" >}}
+{{< figure src="/img/both_work.jpg" caption="Success!" >}}
 
 Sweet. Everything works.
 
